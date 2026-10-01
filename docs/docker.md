@@ -38,11 +38,31 @@ is included.
   `docker-compose.yml`. If you change any of them, rebuild:
   `docker compose --env-file .env.local up --build -d`. This includes
   `NEXT_PUBLIC_APP_LOCALE` (`en | ko | pt | es`), so the UI language is
-  fixed per image.
+  fixed per image. It also includes
+  `NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY`; rebuild after changing the
+  Web Push public key so browsers can create subscriptions with the new
+  key.
 - Everything else (`SUPABASE_SERVICE_ROLE_KEY`, `ENCRYPTION_KEY`,
-  `META_APP_SECRET`, …) is read at **runtime** from `.env.local` via
+  `META_APP_SECRET`, `WEB_PUSH_VAPID_PRIVATE_KEY`, …) is read at
+  **runtime** from `.env.local` via
   `env_file` and is never baked into the image — safe to change with
   just a container restart.
+
+## Web Push notifications
+
+Closed-browser notifications are optional. Generate VAPID keys with:
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+Set `NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY`,
+`WEB_PUSH_VAPID_PRIVATE_KEY`, and `WEB_PUSH_CONTACT_EMAIL` in
+`.env.local`, then rebuild the image because the public key is a
+build-time client variable. Production Web Push requires HTTPS;
+localhost is accepted by browsers for local testing. Safari/iOS support
+depends on browser and install mode, so agents should confirm the
+status shown under Settings → Browser notifications on each device.
 
 ## Plain Docker (no Compose)
 
@@ -50,6 +70,7 @@ is included.
 docker build \
   --build-arg NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co \
   --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key \
+  --build-arg NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=your-public-vapid-key \
   -t wacrm .
 
 docker run -d --env-file .env.local -e PORT=3000 -p 3000:3000 wacrm

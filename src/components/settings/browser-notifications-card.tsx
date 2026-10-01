@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Bell, BellRing, CircleAlert, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
@@ -21,6 +21,13 @@ import {
   writeBrowserNotifyPref,
   type BrowserNotifyPermission,
 } from '@/lib/notifications/browser-notify';
+import {
+  getExistingPushSubscription,
+  getWebPushAvailability,
+  subscribeToWebPush,
+  unsubscribeFromWebPush,
+  type WebPushAvailability,
+} from '@/lib/notifications/web-push-client';
 
 // `Notification.permission` has no change event of its own. Re-read it
 // whenever the tab regains focus (the user may have flipped the site
@@ -38,6 +45,12 @@ function subscribePermission(onChange: () => void): () => void {
 }
 
 const serverPermission = (): BrowserNotifyPermission => 'unsupported';
+const serverPushAvailability = (): WebPushAvailability => ({
+  supported: false,
+  reason: 'unsupported',
+});
+
+type PushStatus = 'checking' | 'enabled' | 'disabled' | 'not-configured' | 'unsupported';
 
 /**
  * "Browser notifications" card — device-scoped opt-in for desktop
@@ -53,18 +66,56 @@ export function BrowserNotificationsCard({ className }: { className?: string }) 
     getNotificationPermission,
     serverPermission,
   );
+  const pushAvailability = useSyncExternalStore(
+    subscribePermission,
+    getWebPushAvailability,
+    serverPushAvailability,
+  );
   const [requesting, setRequesting] = useState(false);
+  const [pushStatus, setPushStatus] = useState<PushStatus>('checking');
 
   const supported = permission !== 'unsupported';
   const checked = enabled && permission === 'granted';
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!pushAvailability.supported) {
+      setPushStatus(pushAvailability.reason);
+      return;
+    }
+
+    getExistingPushSubscription()
+      .then((subscription) => {
+        if (!cancelled) setPushStatus(subscription ? 'enabled' : 'disabled');
+      })
+      .catch(() => {
+        if (!cancelled) setPushStatus('disabled');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pushAvailability]);
+
   const onToggle = async (next: boolean) => {
     if (!next) {
       writeBrowserNotifyPref(false);
+      await unsubscribeFromWebPush();
+      setPushStatus(pushAvailability.supported ? 'disabled' : pushAvailability.reason);
       return;
     }
     if (permission === 'granted') {
       writeBrowserNotifyPref(true);
+      if (pushAvailability.supported) {
+        try {
+          await subscribeToWebPush();
+          setPushStatus('enabled');
+        } catch {
+          setPushStatus('disabled');
+          toast.error(t('pushSubscribeFailed'));
+        }
+      }
       return;
     }
     if (permission === 'denied') {
@@ -76,6 +127,15 @@ export function BrowserNotificationsCard({ className }: { className?: string }) 
       const result = await Notification.requestPermission();
       // Also dispatches the change event, which refreshes `permission`.
       writeBrowserNotifyPref(result === 'granted');
+      if (result === 'granted' && pushAvailability.supported) {
+        try {
+          await subscribeToWebPush();
+          setPushStatus('enabled');
+        } catch {
+          setPushStatus('disabled');
+          toast.error(t('pushSubscribeFailed'));
+        }
+      }
       if (result === 'denied') {
         toast.error(t('permissionDeniedToast'), { description: t('deniedHint') });
       }
@@ -102,6 +162,15 @@ export function BrowserNotificationsCard({ className }: { className?: string }) 
       : permission === 'denied'
         ? 'statusDenied'
         : 'statusDefault';
+
+  const pushStatusKey =
+    pushStatus === 'enabled'
+      ? 'pushEnabled'
+      : pushStatus === 'not-configured'
+        ? 'pushNotConfigured'
+        : pushStatus === 'unsupported'
+          ? 'pushUnsupported'
+          : 'pushDisabled';
 
   return (
     <Card className={className}>
@@ -141,6 +210,7 @@ export function BrowserNotificationsCard({ className }: { className?: string }) 
             </div>
 
             <p className="text-xs text-muted-foreground">{t(statusKey)}</p>
+            <p className="text-xs text-muted-foreground">{t(pushStatusKey)}</p>
 
             {permission === 'denied' && (
               <p className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
