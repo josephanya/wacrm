@@ -11,6 +11,15 @@ export interface PushSubscriptionJson {
 }
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY;
+const WEB_PUSH_SUPPORTED: WebPushAvailability = { supported: true };
+const WEB_PUSH_NOT_CONFIGURED: WebPushAvailability = {
+  supported: false,
+  reason: 'not-configured',
+};
+const WEB_PUSH_UNSUPPORTED: WebPushAvailability = {
+  supported: false,
+  reason: 'unsupported',
+};
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -30,16 +39,16 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 }
 
 export function getWebPushAvailability(): WebPushAvailability {
-  if (!VAPID_PUBLIC_KEY) return { supported: false, reason: 'not-configured' };
+  if (!VAPID_PUBLIC_KEY) return WEB_PUSH_NOT_CONFIGURED;
   if (
     typeof window === 'undefined' ||
     !('serviceWorker' in navigator) ||
     !('PushManager' in window) ||
     !('Notification' in window)
   ) {
-    return { supported: false, reason: 'unsupported' };
+    return WEB_PUSH_UNSUPPORTED;
   }
-  return { supported: true };
+  return WEB_PUSH_SUPPORTED;
 }
 
 export function isWebPushSupported(): boolean {

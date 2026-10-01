@@ -45,12 +45,15 @@ function subscribePermission(onChange: () => void): () => void {
 }
 
 const serverPermission = (): BrowserNotifyPermission => 'unsupported';
-const serverPushAvailability = (): WebPushAvailability => ({
+const SERVER_PUSH_UNSUPPORTED: WebPushAvailability = {
   supported: false,
   reason: 'unsupported',
-});
+};
+const serverPushAvailability = (): WebPushAvailability =>
+  SERVER_PUSH_UNSUPPORTED;
 
-type PushStatus = 'checking' | 'enabled' | 'disabled' | 'not-configured' | 'unsupported';
+type PushStatus =
+  'checking' | 'enabled' | 'disabled' | 'not-configured' | 'unsupported';
 
 /**
  * "Browser notifications" card — device-scoped opt-in for desktop
@@ -58,18 +61,22 @@ type PushStatus = 'checking' | 'enabled' | 'disabled' | 'not-configured' | 'unsu
  * localStorage; the browser's own permission grant is the real gate,
  * so the switch reads as off whenever that grant is missing.
  */
-export function BrowserNotificationsCard({ className }: { className?: string }) {
+export function BrowserNotificationsCard({
+  className,
+}: {
+  className?: string;
+}) {
   const t = useTranslations('Settings.browserNotifications');
   const enabled = useBrowserNotifyPref();
   const permission = useSyncExternalStore(
     subscribePermission,
     getNotificationPermission,
-    serverPermission,
+    serverPermission
   );
   const pushAvailability = useSyncExternalStore(
     subscribePermission,
     getWebPushAvailability,
-    serverPushAvailability,
+    serverPushAvailability
   );
   const [requesting, setRequesting] = useState(false);
   const [pushStatus, setPushStatus] = useState<PushStatus>('checking');
@@ -102,7 +109,9 @@ export function BrowserNotificationsCard({ className }: { className?: string }) 
     if (!next) {
       writeBrowserNotifyPref(false);
       await unsubscribeFromWebPush();
-      setPushStatus(pushAvailability.supported ? 'disabled' : pushAvailability.reason);
+      setPushStatus(
+        pushAvailability.supported ? 'disabled' : pushAvailability.reason
+      );
       return;
     }
     if (permission === 'granted') {
@@ -137,7 +146,9 @@ export function BrowserNotificationsCard({ className }: { className?: string }) 
         }
       }
       if (result === 'denied') {
-        toast.error(t('permissionDeniedToast'), { description: t('deniedHint') });
+        toast.error(t('permissionDeniedToast'), {
+          description: t('deniedHint'),
+        });
       }
     } finally {
       setRequesting(false);
@@ -175,30 +186,32 @@ export function BrowserNotificationsCard({ className }: { className?: string }) 
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-foreground">
-          <Bell className="size-4 text-muted-foreground" />
+        <CardTitle className="text-foreground flex items-center gap-2">
+          <Bell className="text-muted-foreground size-4" />
           {t('title')}
         </CardTitle>
         <CardDescription>{t('description')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {!supported ? (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <p className="text-muted-foreground flex items-center gap-2 text-sm">
             <CircleAlert className="size-4 shrink-0" />
             {t('unsupported')}
           </p>
         ) : (
           <>
-            <div className="flex items-center justify-between gap-4 rounded-md border border-border p-3">
+            <div className="border-border flex items-center justify-between gap-4 rounded-md border p-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-foreground text-sm font-medium">
                   {t('toggleLabel')}
                 </p>
-                <p className="text-xs text-muted-foreground">{t('toggleDesc')}</p>
+                <p className="text-muted-foreground text-xs">
+                  {t('toggleDesc')}
+                </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 {requesting && (
-                  <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                  <Loader2 className="text-muted-foreground size-4 animate-spin" />
                 )}
                 <Switch
                   checked={checked}
@@ -209,8 +222,8 @@ export function BrowserNotificationsCard({ className }: { className?: string }) 
               </div>
             </div>
 
-            <p className="text-xs text-muted-foreground">{t(statusKey)}</p>
-            <p className="text-xs text-muted-foreground">{t(pushStatusKey)}</p>
+            <p className="text-muted-foreground text-xs">{t(statusKey)}</p>
+            <p className="text-muted-foreground text-xs">{t(pushStatusKey)}</p>
 
             {permission === 'denied' && (
               <p className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
