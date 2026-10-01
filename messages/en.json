@@ -1670,6 +1670,7 @@
     "sections": {
       "overview": "Overview",
       "profile": "Your profile",
+      "notifications": "Notifications",
       "security": "Login & security",
       "appearance": "Appearance",
       "whatsapp": "WhatsApp",
@@ -1683,6 +1684,10 @@
     "groups": {
       "account": "Account",
       "workspace": "Workspace"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Control message alerts for this browser and device. Web Push is used when supported so inbound customer messages can still alert you after the tab is closed."
     },
     "profile": {
       "title": "Your profile",

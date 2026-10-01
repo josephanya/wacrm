@@ -1660,6 +1660,7 @@
     "sections": {
       "overview": "Resumen",
       "profile": "Tu perfil",
+      "notifications": "Notificaciones",
       "security": "Acceso y seguridad",
       "appearance": "Apariencia",
       "whatsapp": "WhatsApp",
@@ -1673,6 +1674,10 @@
     "groups": {
       "account": "Cuenta",
       "workspace": "Espacio de trabajo"
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "description": "Controla las alertas de mensajes para este navegador y dispositivo. Web Push se usa cuando está disponible para que los mensajes entrantes de clientes puedan avisarte aunque la pestaña esté cerrada."
     },
     "profile": {
       "title": "Tu perfil",

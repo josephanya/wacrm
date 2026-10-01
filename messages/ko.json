@@ -1670,6 +1670,7 @@
     "sections": {
       "overview": "개요",
       "profile": "내 프로필",
+      "notifications": "알림",
       "security": "로그인 & 보안",
       "appearance": "화면 설정",
       "whatsapp": "WhatsApp",
@@ -1683,6 +1684,10 @@
     "groups": {
       "account": "계정",
       "workspace": "워크스페이스"
+    },
+    "notifications": {
+      "title": "알림",
+      "description": "이 브라우저와 기기의 메시지 알림을 제어합니다. 지원되는 경우 Web Push를 사용해 탭이 닫혀 있어도 고객의 새 수신 메시지를 알려줍니다."
     },
     "profile": {
       "title": "내 프로필",
